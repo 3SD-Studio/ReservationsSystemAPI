@@ -36,11 +36,12 @@ class User(db.Model):
 
 
 class Event(db.Model):
-    # Event (id, name, description, link, start, end, owner_id)
+    # Event (id, name, description, link, editPassword, start, end, owner_id)
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     name = sa.Column(sa.String, nullable=False)
     description = sa.Column(sa.String)
     link = sa.Column(sa.String)
+    editPassword = sa.Column(sa.String)  # hashed JIC
     begin = sa.Column(sa.DateTime, nullable=False)
     end = sa.Column(sa.DateTime, nullable=False)
     ownerId = sa.Column(sa.ForeignKey(User.id))
