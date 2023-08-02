@@ -1,7 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 import sqlalchemy as sa
 
-
 db = SQLAlchemy()
 
 
@@ -17,12 +16,27 @@ class Room(db.Model):
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     name = sa.Column(sa.String, nullable=False)
     description = sa.Column(sa.String)
+#   capacity = sa.Column(sa.Integer)
     projector = sa.Column(sa.Boolean)
     conditioning = sa.Column(sa.Boolean)
     tv = sa.Column(sa.Boolean)
     ethernet = sa.Column(sa.Boolean)
     wifi = sa.Column(sa.Boolean)
     whiteboard = sa.Column(sa.Boolean)
+
+    def obj_to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            # "capacity": self.capacity,
+            "projector": self.projector,
+            "conditioning": self.conditioning,
+            "tv": self.tv,
+            "ethernet": self.ethernet,
+            "wifi": self.wifi,
+            "whiteboard": self.whiteboard
+        }
 
 
 class User(db.Model):
