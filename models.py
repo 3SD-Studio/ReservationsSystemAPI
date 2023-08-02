@@ -16,7 +16,7 @@ class Room(db.Model):
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     name = sa.Column(sa.String, nullable=False)
     description = sa.Column(sa.String)
-#   capacity = sa.Column(sa.Integer)
+    capacity = sa.Column(sa.Integer)
     projector = sa.Column(sa.Boolean)
     conditioning = sa.Column(sa.Boolean)
     tv = sa.Column(sa.Boolean)
@@ -29,7 +29,7 @@ class Room(db.Model):
             "id": self.id,
             "name": self.name,
             "description": self.description,
-            # "capacity": self.capacity,
+            "capacity": self.capacity,
             "projector": self.projector,
             "conditioning": self.conditioning,
             "tv": self.tv,

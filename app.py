@@ -24,13 +24,13 @@ def add_room():
     whiteboard = request.json["whiteboard"]
     wifi = request.json["wifi"]
 
-    new_room = Room(name=name, description=description, projector=projector,
+    new_room = Room(name=name, description=description, capacity=capacity, projector=projector,
                     conditioning=conditioning, tv=tv, ethernet=ethernet, whiteboard=whiteboard, wifi=wifi)
 
     db.session.add(new_room)
     db.session.commit()
 
-    return jsonify("dziala")
+    return jsonify("The room has been added!")
 
 @app.route('/')
 def index():
@@ -40,22 +40,7 @@ def index():
 @app.route("/rooms")
 def get_rooms():
     rooms = db.session.execute(db.select(Room)).all()
-    data = []
-    for room in rooms:
-        temp = {
-            "id": room[0].id,
-            "name": room[0].name,
-            "description": room[0].description,
-            # "capacity": room.capacity,
-            "projector": room[0].projector,
-            "conditioning": room[0].conditioning,
-            "tv": room[0].tv,
-            "ethernet": room[0].ethernet,
-            "wifi": room[0].wifi,
-            "whiteboard": room[0].whiteboard
-        }
-        data.append(temp)
-    return jsonify(data)
+    return jsonify([room[0].obj_to_dict() for room in rooms])
 
 
 app.run()
