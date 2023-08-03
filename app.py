@@ -26,6 +26,14 @@ def get_room(room_id):
     return jsonify(room.obj_to_dict())
 
 
+@app.route("/room/<room_id>/events")
+def get_events_for_room(room_id):
+    room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
+    events = room.events
+    return jsonify([event.obj_to_dict() for event in events])
+
+
+
 @app.route("/rooms")
 def get_rooms():
     rooms = db.session.execute(db.select(Room)).all()
@@ -73,12 +81,18 @@ def post_event():
     begin = request.json["begin"]
     end = request.json["end"]
     ownerId = request.json["ownerId"]
+    roomsId = request.json["roomsId"]
 
     new_event = Event(name=name, description=description, link=link,
                       begin=datetime.strptime(begin, DATE_FORMAT),
                       end=datetime.strptime(end, DATE_FORMAT), ownerId=ownerId)
 
     db.session.add(new_event)
+
+    for roomId in roomsId:
+        room = db.session.execute(db.select(Room).filter_by(id=roomId)).scalar_one()
+        room.events.append(new_event)
+
     db.session.commit()
 
     return jsonify("The event has been added!")

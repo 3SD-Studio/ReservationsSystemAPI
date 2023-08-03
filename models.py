@@ -1,7 +1,24 @@
 from flask_sqlalchemy import SQLAlchemy
 import sqlalchemy as sa
+from sqlalchemy.orm import sessionmaker, relationship, backref
 
 db = SQLAlchemy()
+
+
+room_event_m2m = db.Table(
+    # Reservations (room_id, event_id)
+    "room_event",
+    sa.Column("room_id", sa.ForeignKey('room.id')),
+    sa.Column("event_id", sa.ForeignKey('event.id')),
+)
+
+
+user_event_m2m = db.Table(
+    # Participants (event_id, user_id)
+    "user_event",
+    sa.Column("user_id", sa.ForeignKey('user.id')),
+    sa.Column("event_id", sa.ForeignKey('event.id')),
+)
 
 
 class Role(db.Model):
@@ -23,6 +40,7 @@ class Room(db.Model):
     ethernet = sa.Column(sa.Boolean)
     wifi = sa.Column(sa.Boolean)
     whiteboard = sa.Column(sa.Boolean)
+    events = relationship("Event", secondary="room_event", backref='rooms')
 
     def obj_to_dict(self):
         return {
@@ -71,18 +89,3 @@ class Event(db.Model):
             "end": self.end,
             "ownerId": self.ownerId,
         }
-
-room_event_m2m = db.Table(
-    # Reservations (room_id, event_id)
-    "room_event",
-    sa.Column("room_id", sa.ForeignKey(Room.id), primary_key=True),
-    sa.Column("event_id", sa.ForeignKey(Event.id), primary_key=True),
-)
-
-
-user_event_m2m = db.Table(
-    # Participants (event_id, user_id)
-    "user_event",
-    sa.Column("user_id", sa.ForeignKey(User.id), primary_key=True),
-    sa.Column("event_id", sa.ForeignKey(Event.id), primary_key=True),
-)
