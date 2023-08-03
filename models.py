@@ -60,6 +60,17 @@ class Event(db.Model):
     end = sa.Column(sa.DateTime, nullable=False)
     ownerId = sa.Column(sa.ForeignKey(User.id))
 
+    def obj_to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "link": self.link,
+            "editPassword": self.editPassword,
+            "begin": self.begin,
+            "end": self.end,
+            "ownerId": self.ownerId,
+        }
 
 room_event_m2m = db.Table(
     # Reservations (room_id, event_id)
