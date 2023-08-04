@@ -6,7 +6,7 @@
 
 GET `/rooms`
 
-Returns a list of rooms with detailed informations.
+Returns a list of rooms.
 
 
 ### Get a single room ###
@@ -66,12 +66,31 @@ GET `/event/:eventId`
 Allows you to view an existing event.
 
 
-### Get all events for room ###
+### All events for room on date ###
 
 GET `/room/:roomId/events`
 
-Allows you to view all events for room.
+Allows you to view all events for room on given date.
 
+Required query parameters:
+
+- day: number of day
+- month: number of month
+- year: number of year
+
+**Possible errors**
+
+Status code 400 - "Invalid value for query parameter." Try changing the value of provided query parameter
+
+### Nearest events for room ###
+
+GET `/room/:roomId/events`
+
+Allows you to view up to 20 nearest events for room.
+
+Optional query parameters:
+
+- limit: a number between 1 and 20.
 
 ### Add event ###
 
