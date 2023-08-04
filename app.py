@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from sqlalchemy.orm.exc import NoResultFound
 from flask import Flask, jsonify, request, abort
 from models import *
 from flask_cors import CORS
@@ -29,7 +30,11 @@ def get_rooms():
 
 @app.route("/room/<room_id>")
 def get_room(room_id):
-    room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
+    try:
+        room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
+    except NoResultFound:
+        abort(400, description='Invalid value for roomId parameter.')
+
     return jsonify(room.obj_to_dict())
 
 
@@ -62,7 +67,11 @@ def get_events():
 
 @app.route("/event/<event_id>")
 def get_event(event_id):
-    event = db.session.execute(db.select(Event).filter_by(id=event_id)).scalar_one()
+    try:
+        event = db.session.execute(db.select(Event).filter_by(id=event_id)).scalar_one()
+    except NoResultFound:
+        abort(400, description='Invalid value for eventId parameter.')
+
     return jsonify(event.obj_to_dict())
 
 
@@ -72,7 +81,11 @@ def get_events_for_room(room_id):
         limit = request.args.get("limit", default=20, type=int)
         if 0 > limit or limit > 20:
             abort(400, description='Invalid value for limit parameter.')
-        room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
+        try:
+            room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
+        except NoResultFound:
+            abort(400, description='Invalid value for roomId parameter.')
+
         events = room.events
 
         result = [event.obj_to_dict() for event in events if event.begin >= datetime.today()]
@@ -89,7 +102,11 @@ def get_events_for_room(room_id):
         except ValueError:
             abort(400, description='Invalid value for date parameter.')
 
-        room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
+        try:
+            room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
+        except NoResultFound:
+            abort(400, description='Invalid value for roomId parameter.')
+
         events = room.events
 
         return jsonify([event.obj_to_dict() for event in events if event.begin.date() == given_date.date()])
