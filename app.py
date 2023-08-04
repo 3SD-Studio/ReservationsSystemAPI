@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, abort
 from models import *
 from flask_cors import CORS
 
@@ -15,29 +15,22 @@ with app.app_context():
 
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
+
 @app.route('/')
 def index():
     return jsonify("Hello World!")
+
+
+@app.route("/rooms")
+def get_rooms():
+    rooms = db.session.execute(db.select(Room)).all()
+    return jsonify([room[0].obj_to_dict_short() for room in rooms])
 
 
 @app.route("/room/<room_id>")
 def get_room(room_id):
     room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
     return jsonify(room.obj_to_dict())
-
-
-@app.route("/room/<room_id>/events")
-def get_events_for_room(room_id):
-    room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
-    events = room.events
-    return jsonify([event.obj_to_dict() for event in events])
-
-
-
-@app.route("/rooms")
-def get_rooms():
-    rooms = db.session.execute(db.select(Room)).all()
-    return jsonify([room[0].obj_to_dict() for room in rooms])
 
 
 @app.route("/room", methods=["POST"])
@@ -61,16 +54,43 @@ def post_room():
     return jsonify("The room has been added!")
 
 
+@app.route("/events")
+def get_events():
+    events = db.session.execute(db.select(Event)).all()
+    return jsonify([event[0].obj_to_dict() for event in events])
+
+
 @app.route("/event/<event_id>")
 def get_event(event_id):
     event = db.session.execute(db.select(Event).filter_by(id=event_id)).scalar_one()
     return jsonify(event.obj_to_dict())
 
 
-@app.route("/events")
-def get_events():
-    events = db.session.execute(db.select(Event)).all()
-    return jsonify([event[0].obj_to_dict() for event in events])
+@app.route("/room/<room_id>/events")
+def get_events_for_room(room_id):
+    if len(request.args) <= 1:
+        limit = request.args.get("limit", default=None, type=int)
+        room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
+        events = room.events
+
+        result = [event.obj_to_dict() for event in events if event.begin >= datetime.today()]
+        sorted_result = sorted(result, key=lambda x: x['begin'])
+
+        return jsonify(sorted_result) if limit is None else jsonify(sorted_result[:limit])
+
+    else:
+        try:
+            day = request.args.get("day", default=None, type=int)
+            month = request.args.get("month", default=None, type=int)
+            year = request.args.get("year", default=None, type=int)
+            given_date = datetime(day=day, month=month, year=year)
+        except ValueError:
+            abort(400, description='Invalid value for query parameter.')
+
+        room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
+        events = room.events
+
+        return jsonify([event.obj_to_dict() for event in events if event.begin.date() == given_date.date()])
 
 
 @app.route("/event", methods=["POST"])

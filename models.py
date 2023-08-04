@@ -56,6 +56,14 @@ class Room(db.Model):
             "whiteboard": self.whiteboard
         }
 
+    def obj_to_dict_short(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "capacity": self.capacity
+        }
+
 
 class User(db.Model):
     # User (id, email, firstName, lastName, hashedPassword, role_id)
