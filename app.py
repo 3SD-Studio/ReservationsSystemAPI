@@ -69,14 +69,16 @@ def get_event(event_id):
 @app.route("/room/<room_id>/events")
 def get_events_for_room(room_id):
     if len(request.args) <= 1:
-        limit = request.args.get("limit", default=None, type=int)
+        limit = request.args.get("limit", default=20, type=int)
+        if 0 > limit or limit > 20:
+            abort(400, description='Invalid value for limit parameter.')
         room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
         events = room.events
 
         result = [event.obj_to_dict() for event in events if event.begin >= datetime.today()]
         sorted_result = sorted(result, key=lambda x: x['begin'])
 
-        return jsonify(sorted_result) if limit is None else jsonify(sorted_result[:limit])
+        return jsonify(sorted_result[:limit])
 
     else:
         try:
@@ -85,7 +87,7 @@ def get_events_for_room(room_id):
             year = request.args.get("year", default=None, type=int)
             given_date = datetime(day=day, month=month, year=year)
         except ValueError:
-            abort(400, description='Invalid value for query parameter.')
+            abort(400, description='Invalid value for date parameter.')
 
         room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
         events = room.events
