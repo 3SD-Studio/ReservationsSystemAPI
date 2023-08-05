@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy.orm.exc import NoResultFound
 from flask import Flask, jsonify, request, abort
@@ -126,10 +126,23 @@ def post_event():
                       begin=datetime.strptime(begin, DATE_FORMAT),
                       end=datetime.strptime(end, DATE_FORMAT), ownerId=ownerId)
 
+    event_duration = new_event.end - new_event.begin
+    if new_event.begin >= new_event.end:
+        abort(400, description='Begin date is greater than end date.')
+    if event_duration < timedelta(minutes=15):
+        abort(400, description='Event duration cant be shorter than 15 minutes.')
+    if new_event.begin.date() != new_event.end.date():
+        abort(400, description='Begin and end date have to be the same')
+
     db.session.add(new_event)
 
     for roomId in roomsId:
         room = db.session.execute(db.select(Room).filter_by(id=roomId)).scalar_one()
+        events = room.events
+        for event in events:
+            if ((new_event.begin > event.begin) and (new_event.begin < event.end)) \
+                    or ((new_event.end > event.begin) and (new_event.end < event.end)):
+                abort(400, description='Event date collides with an already existing event.')
         room.events.append(new_event)
 
     db.session.commit()
