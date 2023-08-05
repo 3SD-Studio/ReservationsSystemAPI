@@ -80,7 +80,7 @@ Required query parameters:
 
 **Possible errors**
 
-Status code 400 - "Invalid value for query parameter." Try changing the value of provided query parameter
+Status code 400 - "Invalid value for date parameter." Try changing the value of provided query parameter
 
 ### Nearest events for room ###
 
