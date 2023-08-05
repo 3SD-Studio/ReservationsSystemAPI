@@ -80,7 +80,7 @@ Required query parameters:
 
 **Possible errors**
 
-Status code 400 - "Invalid value for date parameter." Try changing the value of provided query parameter
+Status code 400 - Try changing the value of "roomId" parameter
 
 ### Nearest events for room ###
 
@@ -122,3 +122,7 @@ POST /event/
     "roomsId": [1]
 }
 ```
+
+**Possible errors**
+
+Status code 400 - Try changing the value of "begin" and "end" parameters.
