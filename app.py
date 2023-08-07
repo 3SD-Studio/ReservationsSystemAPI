@@ -109,7 +109,10 @@ def get_events_for_room(room_id):
 
         events = room.events
 
-        return jsonify([event.obj_to_dict() for event in events if event.begin.date() == given_date.date()])
+        result = [event.obj_to_dict() for event in events if event.begin.date() == given_date.date()]
+        sorted_result = sorted(result, key=lambda x: x['begin'])
+
+        return jsonify(sorted_result)
 
 
 @app.route("/event", methods=["POST"])
