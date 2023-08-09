@@ -71,7 +71,7 @@ class User(db.Model):
     email = sa.Column(sa.String, nullable=False, unique=True)
     firstName = sa.Column(sa.String)
     lastName = sa.Column(sa.String)
-    password = sa.Column(sa.String)  # hashed JIC
+    password = sa.Column(sa.String, nullable=False)  # hashed JIC
     role_id = sa.Column(sa.Integer, sa.ForeignKey(Role.id), default="1")
 
     def obj_to_dict(self):
