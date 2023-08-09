@@ -75,9 +75,11 @@ class User(db.Model):
     role_id = sa.Column(sa.Integer, sa.ForeignKey(Role.id))
 
     def obj_to_dict(self):
-        return {"email": self.email,
-                "firstName": self.firstName,
-                "lastName": self.lastName}
+        return {
+            "email": self.email,
+            "firstName": self.firstName,
+            "lastName": self.lastName
+        }
 
     def is_authenticated(self):
         return True

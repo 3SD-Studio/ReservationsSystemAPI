@@ -178,7 +178,11 @@ def register():
     if not validate_email(email):
         abort(400, description='Invalid email.')
 
-    if db.session.execute(db.select(User).filter_by(email=email)).scalar_one():
+    try:
+        db.session.execute(db.select(User).filter_by(email=email)).scalar_one()
+    except NoResultFound:
+        pass
+    else:
         abort(400, description='User with provided email already exist.')
 
     user = User(email=email, firstName=firstName, lastName=lastName, password=hash_password(password), role_id=1)
@@ -186,13 +190,21 @@ def register():
     db.session.add(user)
     db.session.commit()
 
+    return jsonify("User has been registered.")
+
 
 @app.route('/login', methods=['POST'])
 def login():
     email = request.json["email"]
     password = request.json["password"]
-    user = User(email=email, password=hash_password(password), role_id=1)
+
+    try:
+        user = db.session.execute(db.select(User).filter_by(email=email, password=hash_password(password))).scalar_one()
+    except NoResultFound:
+        abort(400, description='Invalid email or password.')
+
     login_user(user)
+
     return jsonify(user.obj_to_dict())
 
 
