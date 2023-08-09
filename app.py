@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, request, abort
-from flask.ext.login import (current_user, LoginManager,
+from flask_login import (current_user, LoginManager,
                              login_user, logout_user,
                              login_required)
 from sqlalchemy.orm.exc import NoResultFound
