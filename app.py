@@ -6,6 +6,7 @@ from flask_login import (current_user, LoginManager,
 from sqlalchemy.orm.exc import NoResultFound
 from models import *
 from flask_cors import CORS
+from functions import *
 
 app = Flask(__name__)
 app.secret_key = 'some key'
@@ -167,11 +168,30 @@ def load_user(user_id):
     return User.objects(id=user_id).first()
 
 
+@app.route('/register', methods=['POST'])
+def register():
+    email = request.json["email"]
+    firstName = request.json["firstName"]
+    lastName = request.json["lastName"]
+    password = request.json["password"]
+
+    if not validate_email(email):
+        abort(400, description='Invalid email.')
+
+    if db.session.execute(db.select(User).filter_by(email=email)).scalar_one():
+        abort(400, description='User with provided email already exist.')
+
+    user = User(email=email, firstName=firstName, lastName=lastName, password=hash_password(password), role_id=1)
+
+    db.session.add(user)
+    db.session.commit()
+
+
 @app.route('/login', methods=['POST'])
 def login():
     email = request.json["email"]
     password = request.json["password"]
-    user = User(email=email, password=password, role_id=1)
+    user = User(email=email, password=hash_password(password), role_id=1)
     login_user(user)
     return jsonify(user.obj_to_dict())
 
