@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
-
-from sqlalchemy.orm.exc import NoResultFound
 from flask import Flask, jsonify, request, abort
+from flask.ext.login import (current_user, LoginManager,
+                             login_user, logout_user,
+                             login_required)
+from sqlalchemy.orm.exc import NoResultFound
 from models import *
 from flask_cors import CORS
 
@@ -135,7 +137,9 @@ def post_event():
     if event_duration < timedelta(minutes=15):
         abort(400, description='Event duration cant be shorter than 15 minutes.')
     if new_event.begin.date() != new_event.end.date():
-        abort(400, description='Begin and end date have to be the same')
+        abort(400, description='Begin and end date have to be the same.')
+    if new_event.begin <= datetime.today():
+        abort(400, description='Invalid begin date.')
 
     db.session.add(new_event)
 
@@ -151,6 +155,15 @@ def post_event():
     db.session.commit()
 
     return jsonify("The event has been added!")
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    email = request.json["email"]
+    password = request.json["password"]
+    user = User.objects(email=email, password=password, role_id=1)
+    login_user(user)
+    return jsonify(user.to_json())
 
 
 app.run()

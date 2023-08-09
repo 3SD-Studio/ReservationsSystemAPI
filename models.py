@@ -84,7 +84,7 @@ class Event(db.Model):
     editPassword = sa.Column(sa.String)  # hashed JIC
     begin = sa.Column(sa.DateTime, nullable=False)
     end = sa.Column(sa.DateTime, nullable=False)
-    ownerId = sa.Column(sa.ForeignKey(User.id))
+    ownerId = sa.Column(sa.Integer, sa.ForeignKey(User.id))
 
     def obj_to_dict(self):
         return {
