@@ -173,7 +173,7 @@ def login():
     password = request.json["password"]
     user = User(email=email, password=password, role_id=1)
     login_user(user)
-    return jsonify(user.to_json())
+    return jsonify(user.obj_to_dict())
 
 
 app.run()
