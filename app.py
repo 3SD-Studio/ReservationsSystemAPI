@@ -8,6 +8,7 @@ from models import *
 from flask_cors import CORS
 
 app = Flask(__name__)
+app.secret_key = 'some key'
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///database.db"
 
 db.init_app(app)
