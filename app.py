@@ -16,6 +16,10 @@ CORS(app)
 with app.app_context():
     db.create_all()
 
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 
@@ -155,6 +159,11 @@ def post_event():
     db.session.commit()
 
     return jsonify("The event has been added!")
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.objects(id=user_id).first()
 
 
 @app.route('/login', methods=['POST'])
