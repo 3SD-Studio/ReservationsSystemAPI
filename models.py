@@ -75,8 +75,7 @@ class User(db.Model):
     role_id = sa.Column(sa.Integer, sa.ForeignKey(Role.id))
 
     def obj_to_dict(self):
-        return {"id": self.id,
-                "email": self.email,
+        return {"email": self.email,
                 "firstName": self.firstName,
                 "lastName": self.lastName}
 
@@ -88,6 +87,9 @@ class User(db.Model):
 
     def is_anonymous(self):
         return False
+
+    def get_id(self):
+        return str(self.id)
 
 
 class Event(db.Model):
