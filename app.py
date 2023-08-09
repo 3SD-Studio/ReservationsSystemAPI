@@ -161,7 +161,7 @@ def post_event():
 def login():
     email = request.json["email"]
     password = request.json["password"]
-    user = User.objects(email=email, password=password, role_id=1)
+    user = User(email=email, password=password, role_id=1)
     login_user(user)
     return jsonify(user.to_json())
 

@@ -74,6 +74,21 @@ class User(db.Model):
     password = sa.Column(sa.String)  # hashed JIC
     role_id = sa.Column(sa.Integer, sa.ForeignKey(Role.id))
 
+    def obj_to_dict(self):
+        return {"id": self.id,
+                "email": self.email,
+                "firstName": self.firstName,
+                "lastName": self.lastName}
+
+    def is_authenticated(self):
+        return True
+
+    def is_active(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
 
 class Event(db.Model):
     # Event (id, name, description, link, editPassword, start, end, owner_id)
