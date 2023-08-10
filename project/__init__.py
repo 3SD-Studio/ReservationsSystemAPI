@@ -186,13 +186,28 @@ def create_app(database_uri="sqlite:///database.db"):
         password = request.json["password"]
 
         try:
-            user = db.session.execute(
-                db.select(User).filter_by(email=email, password=hash_password(password))).scalar_one()
+            user = db.session.execute(db.select(User).filter_by(email=email, password=hash_password(password))).scalar_one()
         except NoResultFound:
             abort(400, description='Invalid email or password.')
 
         login_user(user)
+        token = generate_token(user.id)
+        return jsonify({"token" : token})
 
-        return jsonify(user.obj_to_dict())
+
+    @app.route('/current_user', methods=['GET'])
+    def get_user():
+        token = request.headers.get('Authorization')
+        if request.headers.get('Authorization')[:7] != 'Bearer ':
+            abort(400, description='Invalid token.')
+        else:
+            token = token[7:]
+
+        user_id = verify_token(token)
+        try:
+            user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar_one()
+            return jsonify(user.obj_to_dict())
+        except:
+            abort(400, description='Invalid token.')
 
     return app
