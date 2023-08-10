@@ -1,32 +1,21 @@
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, request, abort
-from flask_login import (current_user, LoginManager,
-                             login_user, logout_user,
-                             login_required)
+from flask_login import (current_user, LoginManager, login_user, logout_user, login_required)
 from sqlalchemy.orm.exc import NoResultFound
-from models import *
-from flask_cors import CORS
+from models import Room, Event, User
 from functions import *
+from project import create_app, db
 
 
-SECRET_KEY = 'some key'
-app = Flask(__name__)
-app.secret_key = SECRET_KEY
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///database.db"
-
-db.init_app(app)
-CORS(app)
+app = create_app()
 
 with app.app_context():
     db.create_all()
 
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
 
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
-TOKEN = ""
+
 @app.route('/')
 def index():
     return jsonify("Hello World!")
@@ -165,11 +154,6 @@ def post_event():
     return jsonify("The event has been added!")
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    return db.session.execute(db.select(User).filter_by(id=user_id)).scalar_one()
-
-
 @app.route('/register', methods=['POST'])
 def register():
     email = request.json["email"]
@@ -206,24 +190,9 @@ def login():
         abort(400, description='Invalid email or password.')
 
     login_user(user)
-    token = generate_token(user.id)
-    return jsonify({"token" : token})
+
+    return jsonify(user.obj_to_dict())
 
 
-@app.route('/user', methods=['GET'])
-def get_user():
-    token = request.headers.get('Authorization')
-    if request.headers.get('Authorization')[:7] != 'Bearer ':
-        abort(400, description='Invalid token.')
-    else:
-        token = token[7:]
-    
-    user_id = verify_token(token)
-    try:
-        user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar_one()
-        return jsonify(user.obj_to_dict())
-    except:
-        abort(400, description='Invalid token.')
-
-    
 app.run()
+
