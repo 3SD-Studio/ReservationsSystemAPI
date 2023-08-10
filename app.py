@@ -8,8 +8,10 @@ from models import *
 from flask_cors import CORS
 from functions import *
 
+
+SECRET_KEY = 'some key'
 app = Flask(__name__)
-app.secret_key = 'some key'
+app.secret_key = SECRET_KEY
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///database.db"
 
 db.init_app(app)
@@ -24,7 +26,7 @@ login_manager.login_view = 'login'
 
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
-
+TOKEN = ""
 @app.route('/')
 def index():
     return jsonify("Hello World!")
@@ -165,7 +167,7 @@ def post_event():
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.objects(id=user_id).first()
+    return db.session.execute(db.select(User).filter_by(id=user_id)).scalar_one()
 
 
 @app.route('/register', methods=['POST'])
@@ -204,8 +206,24 @@ def login():
         abort(400, description='Invalid email or password.')
 
     login_user(user)
+    token = generate_token(user.id)
+    return jsonify({"token" : token})
 
-    return jsonify(user.obj_to_dict())
 
+@app.route('/user', methods=['GET'])
+def get_user():
+    token = request.headers.get('Authorization')
+    if request.headers.get('Authorization')[:7] != 'Bearer ':
+        abort(400, description='Invalid token.')
+    else:
+        token = token[7:]
+    
+    user_id = verify_token(token)
+    try:
+        user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar_one()
+        return jsonify(user.obj_to_dict())
+    except:
+        abort(400, description='Invalid token.')
 
+    
 app.run()
