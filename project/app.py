@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 from flask import Flask, jsonify, request, abort
 from flask_login import (current_user, LoginManager, login_user, logout_user, login_required)
 from sqlalchemy.orm.exc import NoResultFound
-from models import Room, Event, User
-from functions import *
+from .models import Room, Event, User
+from .functions import *
 from project import create_app, db
 
 
@@ -190,9 +190,24 @@ def login():
         abort(400, description='Invalid email or password.')
 
     login_user(user)
+    token = generate_token(user.id)
+    return jsonify({"token" : token})
 
-    return jsonify(user.obj_to_dict())
 
+@app.route('/current_user', methods=['GET'])
+def get_user():
+    token = request.headers.get('Authorization')
+    if request.headers.get('Authorization')[:7] != 'Bearer ':
+        abort(400, description='Invalid token.')
+    else:
+        token = token[7:]
+
+    user_id = verify_token(token)
+    try:
+        user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar_one()
+        return jsonify(user.obj_to_dict())
+    except:
+        abort(400, description='Invalid token.')
 
 app.run()
 
