@@ -1,26 +1,17 @@
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, request, abort
-from flask_login import (current_user, LoginManager,
-                             login_user, logout_user,
-                             login_required)
+from flask_login import (current_user, LoginManager, login_user, logout_user, login_required)
 from sqlalchemy.orm.exc import NoResultFound
-from models import *
-from flask_cors import CORS
+from models import Room, Event, User
 from functions import *
+from project import create_app, db
 
-app = Flask(__name__)
-app.secret_key = 'some key'
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///database.db"
 
-db.init_app(app)
-CORS(app)
+app = create_app()
 
 with app.app_context():
     db.create_all()
 
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
 
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
@@ -161,11 +152,6 @@ def post_event():
     db.session.commit()
 
     return jsonify("The event has been added!")
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.objects(id=user_id).first()
 
 
 @app.route('/register', methods=['POST'])
