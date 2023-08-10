@@ -1,11 +1,11 @@
 import pytest
 from project import create_app
-from project.models import *
+from project.models import db
 
 
 @pytest.fixture()
 def app():
-    app = create_app("sqlite:///db.db")
+    app = create_app("sqlite://")
 
     with app.app_context():
         db.create_all()

@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 import sqlalchemy as sa
-from sqlalchemy.orm import sessionmaker, relationship, backref
+from sqlalchemy.orm import relationship
 
 
 db = SQLAlchemy()
