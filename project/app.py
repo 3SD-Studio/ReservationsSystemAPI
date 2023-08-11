@@ -25,16 +25,16 @@ def create_app(database_uri="sqlite:///database.db"):
     def load_user(user_id):
         return User.objects(id=user_id).first()
 
-    @app.route("/")
+    @app.route("/", methods=['GET'])
     def index():
         return jsonify("Hello World!")
 
-    @app.route("/rooms")
+    @app.route("/rooms", methods=['GET'])
     def get_rooms():
         rooms = db.session.execute(db.select(Room)).all()
         return jsonify([room[0].obj_to_dict_short() for room in rooms])
 
-    @app.route("/room/<room_id>")
+    @app.route("/room/<room_id>", methods=['GET'])
     def get_room(room_id):
         try:
             room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
@@ -63,12 +63,12 @@ def create_app(database_uri="sqlite:///database.db"):
 
         return jsonify("The room has been added!")
 
-    @app.route("/events")
+    @app.route("/events", methods=['GET'])
     def get_events():
         events = db.session.execute(db.select(Event)).all()
         return jsonify([event[0].obj_to_dict() for event in events])
 
-    @app.route("/event/<event_id>")
+    @app.route("/event/<event_id>", methods=['GET'])
     def get_event(event_id):
         try:
             event = db.session.execute(db.select(Event).filter_by(id=event_id)).scalar_one()
@@ -77,7 +77,7 @@ def create_app(database_uri="sqlite:///database.db"):
 
         return jsonify(event.obj_to_dict())
 
-    @app.route("/room/<room_id>/events")
+    @app.route("/room/<room_id>/events", methods=['GET'])
     def get_events_for_room(room_id):
         if len(request.args) <= 1:
             limit = request.args.get("limit", default=20, type=int)
@@ -162,6 +162,10 @@ def create_app(database_uri="sqlite:///database.db"):
         lastName = request.json["lastName"]
         password = request.json["password"]
 
+        if None in (email, firstName, lastName, password):
+            abort(400, description='All variables must be provided')
+        if len(password) < 6:
+            abort(400, description='Password cannot be shorter than 6 characters')
         if not validate_email(email):
             abort(400, description='Invalid email.')
 

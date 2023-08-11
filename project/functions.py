@@ -1,6 +1,6 @@
 import hashlib
 import re
-import jwt 
+import jwt
 from datetime import datetime, timedelta
 
 SECRET_KEY = 'some key'
@@ -12,7 +12,8 @@ def hash_password(password):
 
 
 def validate_email(email):
-    return re.search(r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$", email)
+    return re.search(r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@" +
+                     r"(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$", email)
 
 
 def generate_token(user_id):
@@ -22,13 +23,12 @@ def generate_token(user_id):
         'sub': user_id
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-    print(token)
     return token
 
 
 def verify_token(token):
     try:
-        payload = jwt.decode(token, SECRET_KEY,  algorithms=["HS256"])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         return payload['sub']
     except jwt.ExpiredSignatureError:
         return 'Signature expired. Please log in again.'
