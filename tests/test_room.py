@@ -1,4 +1,3 @@
-from flask import json, jsonify
 from project.models import User
 
 
@@ -32,7 +31,7 @@ def test_room_post(client, app):
 
 def test_registration(client, app):
     data = {
-        "email": "test2@test.com",
+        "email": "test@test.com",
         "firstName": "test",
         "lastName": "test",
         "password": "test"
@@ -44,4 +43,3 @@ def test_registration(client, app):
         assert response.status == "200 OK"
         assert User.query.count() == 1
         assert User.query.first().email == "test@test.com"
-

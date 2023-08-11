@@ -12,7 +12,7 @@ def hash_password(password):
 
 
 def validate_email(email):
-    return re.search(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$", email)
+    return re.search(r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$", email)
 
 
 def generate_token(user_id):
