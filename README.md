@@ -134,24 +134,24 @@ Status code 400 - Try changing the value of "begin" and "end" parameters.
 
 POST `/register`
 
-Allows you to register new user.
+Allows you to register new user. Returns JWT token.
 
 The request body needs to be in JSON format and include the following properties:
 
  - `email` - String - Required
- - `firstName` - String
- - `lastName` - String
- - `password` - String - Required
+ - `firstName` - String - Required
+ - `lastName` - String - Required
+ - `password` - String - Required - cannot be shorter than 6 characters
 
 Example:
 ```
 POST /register/
 
 {
-    "email": "contact3sdstudio@gmail.com",
-    "firstName": "Kamil",
-    "lastName": "Kabina",
-    "password": "sponsor312"
+    "email": "test@test.com",
+    "firstName": "test",
+    "lastName": "test",
+    "password": "test123"
 }
 ```
 
@@ -163,7 +163,7 @@ Status code 400 - Try changing the value of "email" parameter.
 
 POST `/login`
 
-Allows you to login as existing user. Returns email, firstName and lastName.
+Allows you to login as existing user. Returns JWT token.
 
 The request body needs to be in JSON format and include the following properties:
 
@@ -172,14 +172,33 @@ The request body needs to be in JSON format and include the following properties
 
 Example:
 ```
-POST /register/
+POST /login/
 
 {
-    "email": "contact3sdstudio@gmail.com",
-    "password": "sponsor312"
+    "email": "test@test.com",
+    "password": "test123"
 }
 ```
 
 **Possible errors**
 
 Status code 400 - Try changing the value of "email" or "password" parameter.
+
+### Get currently logged user ###
+
+GET `/current_user`
+
+Returns user by provided token.
+
+The request header needs to contain JWT token.
+
+Example
+```
+{
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.e30.B1iOFeMevN3u74w5EuMSZWEIBkEy502nj6u8zYywf1s"
+}
+```
+
+**Possible errors**
+
+Status code 400 - Try using token of already registered user.
