@@ -123,8 +123,17 @@ def create_app(database_uri="sqlite:///database.db"):
         link = request.json["link"]
         begin = request.json["begin"]
         end = request.json["end"]
-        ownerId = request.json["ownerId"]
         roomsId = request.json["roomsId"]
+
+        token = request.headers.get('Authorization')
+        if token is None:
+            ownerId = "undefined"
+        else:
+            if token[:7] != 'Bearer ':
+                abort(400, description='Invalid token.')
+            else:
+                token = token[7:]
+            ownerId = verify_token(token)
 
         new_event = Event(name=name, description=description, link=link,
                           begin=datetime.strptime(begin, DATE_FORMAT),
@@ -197,20 +206,40 @@ def create_app(database_uri="sqlite:///database.db"):
         token = generate_token(user.id)
         return jsonify({"token": token})
 
-    @app.route('/current_user', methods=['GET'])
+    @app.route('/user', methods=['GET'])
     def get_user():
         token = request.headers.get('Authorization')
-        if request.headers.get('Authorization')[:7] != 'Bearer ':
+        if token is None or token[:7] != 'Bearer ':
             abort(400, description='Invalid token.')
         else:
             token = token[7:]
 
-        user_id = verify_token(token)
+        userId = verify_token(token)
         try:
-            user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar_one()
+            user = db.session.execute(db.select(User).filter_by(id=userId)).scalar_one()
             return jsonify(user.obj_to_dict())
         except NoResultFound:
             abort(400, description='Invalid token.')
+
+    @app.route('/user/events', methods=['GET'])
+    def get_events_for_user():
+
+        token = request.headers.get('Authorization')
+        if token is None or token[:7] != 'Bearer ':
+            abort(400, description='Invalid token.')
+        else:
+            token = token[7:]
+
+        limit = request.args.get("limit", default=20, type=int)
+        if 0 > limit or limit > 20:
+            abort(400, description='Invalid value for limit parameter.')
+
+        userId = verify_token(token)
+        events = db.session.execute(db.select(Event).filter_by(ownerId=userId)).all()
+        result = [event[0].obj_to_dict() for event in events]
+        sorted_result = sorted(result, key=lambda x: x['begin'])
+
+        return jsonify(sorted_result[:limit])
 
     return app
 
