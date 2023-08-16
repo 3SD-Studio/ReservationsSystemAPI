@@ -98,7 +98,9 @@ Optional query parameters:
 
 POST `/event`
 
-Allows you to add event.
+Allows you to add event. 
+
+If user token is provided, the ownerId will be assigned to user with given token, else ownerId will be 'undefined'.
 
 The request body needs to be in JSON format and include the following properties:
 
@@ -107,7 +109,6 @@ The request body needs to be in JSON format and include the following properties
  - `link` - String
  - `begin` - DateTime - Required
  - `end` - DateTime - Required
- - `ownerId` - Integer
  - `roomsId` - List of Integers
 
 Example:
@@ -120,7 +121,6 @@ POST /event/
     "link": null,
     "begin": "2023-08-10T09:00:00",
     "end": "2023-08-10T09:30:00",
-    "ownerId": 1,
     "roomsId": [1]
 }
 ```
