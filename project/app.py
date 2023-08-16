@@ -1,7 +1,6 @@
 from flask_cors import CORS
-from datetime import datetime, timedelta
 from flask import Flask, jsonify, request, abort
-from flask_login import LoginManager, login_user
+from flask_login import LoginManager
 from sqlalchemy.orm.exc import NoResultFound
 from project.models import Room, Event, User, db
 from project.functions import *
@@ -40,11 +39,27 @@ def create_app(database_uri="sqlite:///database.db"):
             room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
         except NoResultFound:
             abort(400, description='Invalid value for roomId parameter.')
-
-        return jsonify(room.obj_to_dict())
+        else:
+            return jsonify(room.obj_to_dict())
 
     @app.route("/room", methods=["POST"])
     def post_room():
+        token = request.headers.get('Authorization')
+        if token is None or token[:7] != 'Bearer ':
+            abort(401, description='Invalid token.')
+        else:
+            token = token[7:]
+
+        userId = verify_token(token)
+
+        try:
+            userRoleId = db.session.execute(db.select(User.role_id).filter_by(id=userId)).scalar_one()
+        except NoResultFound:
+            abort(401, description='Invalid token.')
+        else:
+            if userRoleId not in (2, 4):
+                abort(401, description='Only Editor or Admin can add room')
+
         name = request.json["name"]
         description = request.json["description"]
         capacity = request.json["capacity"]
@@ -74,8 +89,8 @@ def create_app(database_uri="sqlite:///database.db"):
             event = db.session.execute(db.select(Event).filter_by(id=event_id)).scalar_one()
         except NoResultFound:
             abort(400, description='Invalid value for eventId parameter.')
-
-        return jsonify(event.obj_to_dict())
+        else:
+            return jsonify(event.obj_to_dict())
 
     @app.route("/room/<room_id>/events", methods=['GET'])
     def get_events_for_room(room_id):
@@ -87,13 +102,13 @@ def create_app(database_uri="sqlite:///database.db"):
                 room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
             except NoResultFound:
                 abort(400, description='Invalid value for roomId parameter.')
+            else:
+                events = room.events
 
-            events = room.events
+                result = [event.obj_to_dict() for event in events if event.begin >= datetime.today()]
+                sorted_result = sorted(result, key=lambda x: x['begin'])
 
-            result = [event.obj_to_dict() for event in events if event.begin >= datetime.today()]
-            sorted_result = sorted(result, key=lambda x: x['begin'])
-
-            return jsonify(sorted_result[:limit])
+                return jsonify(sorted_result[:limit])
 
         else:
             try:
@@ -103,18 +118,18 @@ def create_app(database_uri="sqlite:///database.db"):
                 given_date = datetime(day=day, month=month, year=year)
             except ValueError:
                 abort(400, description='Invalid value for date parameter.')
+            else:
+                try:
+                    room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
+                except NoResultFound:
+                    abort(400, description='Invalid value for roomId parameter.')
+                else:
+                    events = room.events
 
-            try:
-                room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
-            except NoResultFound:
-                abort(400, description='Invalid value for roomId parameter.')
+                    result = [event.obj_to_dict() for event in events if event.begin.date() == given_date.date()]
+                    sorted_result = sorted(result, key=lambda x: x['begin'])
 
-            events = room.events
-
-            result = [event.obj_to_dict() for event in events if event.begin.date() == given_date.date()]
-            sorted_result = sorted(result, key=lambda x: x['begin'])
-
-            return jsonify(sorted_result)
+                    return jsonify(sorted_result)
 
     @app.route("/event", methods=["POST"])
     def post_event():
@@ -130,12 +145,14 @@ def create_app(database_uri="sqlite:///database.db"):
             ownerId = "undefined"
         else:
             if token[:7] != 'Bearer ':
-                abort(400, description='Invalid token.')
+                abort(401, description='Invalid token.')
             else:
                 token = token[7:]
             ownerId = verify_token(token)
 
-        new_event = Event(name=name, description=description, link=link,
+        password = generate_password()
+
+        new_event = Event(name=name, description=description, link=link, editPassword=hash_password(password),
                           begin=datetime.strptime(begin, DATE_FORMAT),
                           end=datetime.strptime(end, DATE_FORMAT), ownerId=ownerId)
 
@@ -162,7 +179,11 @@ def create_app(database_uri="sqlite:///database.db"):
 
         db.session.commit()
 
-        return jsonify("The event has been added!")
+        return jsonify({"id": new_event.id, "password": password})
+
+    @app.route("/event", methods=["PATCH"])
+    def patch_event():
+        ...
 
     @app.route('/register', methods=['POST'])
     def register():
@@ -202,31 +223,32 @@ def create_app(database_uri="sqlite:///database.db"):
             user = db.session.execute(db.select(User).filter_by(email=email, password=hash_password(password))).scalar_one()
         except NoResultFound:
             abort(400, description='Invalid email and password.')
-
-        token = generate_token(user.id)
-        return jsonify({"token": token})
+        else:
+            token = generate_token(user.id)
+            return jsonify({"token": token})
 
     @app.route('/user', methods=['GET'])
     def get_user():
         token = request.headers.get('Authorization')
         if token is None or token[:7] != 'Bearer ':
-            abort(400, description='Invalid token.')
+            abort(401, description='Invalid token.')
         else:
             token = token[7:]
 
         userId = verify_token(token)
         try:
             user = db.session.execute(db.select(User).filter_by(id=userId)).scalar_one()
-            return jsonify(user.obj_to_dict())
         except NoResultFound:
-            abort(400, description='Invalid token.')
+            abort(401, description='Invalid token.')
+        else:
+            return jsonify(user.obj_to_dict())
 
     @app.route('/user/events', methods=['GET'])
     def get_events_for_user():
 
         token = request.headers.get('Authorization')
         if token is None or token[:7] != 'Bearer ':
-            abort(400, description='Invalid token.')
+            abort(401, description='Invalid token.')
         else:
             token = token[7:]
 
@@ -235,6 +257,7 @@ def create_app(database_uri="sqlite:///database.db"):
             abort(400, description='Invalid value for limit parameter.')
 
         userId = verify_token(token)
+
         events = db.session.execute(db.select(Event).filter_by(ownerId=userId)).all()
         result = [event[0].obj_to_dict() for event in events]
         sorted_result = sorted(result, key=lambda x: x['begin'])
@@ -251,4 +274,3 @@ if __name__ == "__main__":
         db.create_all()
 
     app.run()
-

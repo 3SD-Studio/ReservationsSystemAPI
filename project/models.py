@@ -101,7 +101,7 @@ class Event(db.Model):
     name = sa.Column(sa.String, nullable=False)
     description = sa.Column(sa.String)
     link = sa.Column(sa.String)
-    editPassword = sa.Column(sa.String)  # hashed JIC
+    editPassword = sa.Column(sa.String)
     begin = sa.Column(sa.DateTime, nullable=False)
     end = sa.Column(sa.DateTime, nullable=False)
     ownerId = sa.Column(sa.Integer, sa.ForeignKey(User.id))

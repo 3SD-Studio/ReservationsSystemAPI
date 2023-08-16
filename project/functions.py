@@ -2,6 +2,8 @@ import hashlib
 import re
 import jwt
 from datetime import datetime, timedelta
+import secrets
+import string
 
 SECRET_KEY = 'some key'
 
@@ -34,3 +36,8 @@ def verify_token(token):
         return 'Signature expired. Please log in again.'
     except jwt.InvalidTokenError:
         return 'Invalid token. Please log in again.'
+
+
+def generate_password():
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(8))
