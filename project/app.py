@@ -149,6 +149,8 @@ def create_app(database_uri="sqlite:///database.db"):
             else:
                 token = token[7:]
             ownerId = verify_token(token)
+            if "Please log in again." in ownerId:
+                abort(401, description=ownerId)
 
         password = generate_password()
 
@@ -181,9 +183,42 @@ def create_app(database_uri="sqlite:///database.db"):
 
         return jsonify({"id": new_event.id, "password": password})
 
-    @app.route("/event", methods=["PATCH"])
-    def patch_event():
-        ...
+    @app.route("/event/<event_id>", methods=["PATCH"])
+    def patch_event(event_id):
+        if len(request.args) != 1:
+            abort(400, "Invalid number of query parameters")
+        password = request.args.get("password", type=str)
+        try:
+            event = db.session.execute(db.select(Event).filter_by(id=event_id)).scalar_one()
+        except NoResultFound:
+            abort(400, description='Invalid value for eventId parameter.')
+        else:
+            if password is None or hash_password(password) != event.editPassword:
+                abort(400, "Invalid password")
+
+            event.name = request.json["name"]
+            event.description = request.json["description"]
+            event.link = request.json["link"]
+            begin = datetime.strptime(request.json["begin"], DATE_FORMAT)
+            end = datetime.strptime(request.json["end"], DATE_FORMAT)
+            event.roomsId = request.json["roomsId"]
+
+            event_duration = end - begin
+            if begin >= end:
+                abort(400, description='Begin date is greater than end date.')
+            if event_duration < timedelta(minutes=15):
+                abort(400, description='Event duration cant be shorter than 15 minutes.')
+            if begin.date() != end.date():
+                abort(400, description='Begin and end date have to be the same.')
+            if begin <= datetime.today():
+                abort(400, description='Invalid begin date.')
+
+            event.begin = begin
+            event.end = end
+
+            db.session.commit()
+
+            return jsonify({"id": event.id, "password": password})
 
     @app.route('/register', methods=['POST'])
     def register():
