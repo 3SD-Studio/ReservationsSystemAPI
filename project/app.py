@@ -149,7 +149,7 @@ def create_app(database_uri="sqlite:///database.db"):
             else:
                 token = token[7:]
             ownerId = verify_token(token)
-            if "Please log in again." in ownerId:
+            if type(ownerId) == str:
                 abort(401, description=ownerId)
 
         password = generate_password()

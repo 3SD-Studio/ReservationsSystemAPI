@@ -1,5 +1,5 @@
 def test_room_post(client, app):
-    data = {
+    room_data = {
        "name": "Aaa",
        "description": "Sala konferencyjna 8",
        "capacity": 100,
@@ -10,9 +10,22 @@ def test_room_post(client, app):
        "wifi": True,
        "whiteboard": False
     }
+
+    user_data = {
+        "email": "test@test.com",
+        "firstName": "test",
+        "lastName": "test",
+        "password": "test123"
+    }
+
+    response = client.post("/register", json=user_data)
+
+    token = response.json["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
     with app.app_context():
-        response = client.post("/room", json=data)
-    assert response.status == "200 OK"
+        response = client.post("/room", headers=headers, json=room_data)
+    assert response.status_code == 401
 
 
 
