@@ -262,8 +262,7 @@ def create_app(database_uri="sqlite:///database.db"):
             token = generate_token(user.id)
             return jsonify({"token": token})
 
-    @app.route('/user', methods=['GET'])
-    def get_user():
+    def get_logged_user():
         token = request.headers.get('Authorization')
         if token is None or token[:7] != 'Bearer ':
             abort(401, description='Invalid token.')
@@ -276,7 +275,12 @@ def create_app(database_uri="sqlite:///database.db"):
         except NoResultFound:
             abort(401, description='Invalid token.')
         else:
-            return jsonify(user.obj_to_dict())
+            return user
+
+    @app.route('/user', methods=['GET'])
+    def get_logged_user_data():
+        user = get_logged_user()
+        return jsonify(user.obj_to_dict())
 
     @app.route('/user/events', methods=['GET'])
     def get_events_for_user():
@@ -299,6 +303,26 @@ def create_app(database_uri="sqlite:///database.db"):
 
         return jsonify(sorted_result[:limit])
 
+    @app.route('/user/<user_id>', methods=['PATCH'])
+    def change_user_role(user_id):
+        logged_user = get_logged_user()
+        if logged_user.role_id != 4:
+            abort(401, description="Only administrator can change user role.")
+        else:
+            try:
+                user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar_one()
+            except NoResultFound:
+                abort(401, description='Invalid userId.')
+            else:
+                roleId = int(request.json["roleId"])
+                if roleId not in (1, 2, 3, 4):
+                    abort(400, "Invalid roleId value")
+                user.role_id = roleId
+
+                db.session.commit()
+
+                return jsonify("Role has been changed!")
+
     return app
 
 
@@ -307,5 +331,10 @@ if __name__ == "__main__":
 
     with app.app_context():
         db.create_all()
+        admin = db.session.execute(db.select(User).filter_by(email="admin")).scalar_one()
+        if admin is None:
+            admin = User(email="admin", password="admin", role_id=4)
+            db.session.add(admin)
+            db.session.commit()
 
     app.run()
