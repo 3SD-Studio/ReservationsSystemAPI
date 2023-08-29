@@ -74,6 +74,7 @@ class User(db.Model):
     lastName = sa.Column(sa.String)
     password = sa.Column(sa.String, nullable=False)  # hashed JIC
     role_id = sa.Column(sa.ForeignKey(Role.id), default="1")
+    events = relationship("Event", secondary="user_event", backref='users')
 
     def obj_to_dict(self):
         return {

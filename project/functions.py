@@ -28,7 +28,7 @@ def generate_token(user_id):
     return token
 
 
-def verify_token(token):
+def get_id_from_token(token):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         return payload['sub']
