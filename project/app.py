@@ -208,7 +208,6 @@ def create_app(database_uri="sqlite:///database.db"):
             event.link = request.json["link"]
             begin = datetime.strptime(request.json["begin"], DATE_FORMAT)
             end = datetime.strptime(request.json["end"], DATE_FORMAT)
-            event.roomsId = request.json["roomsId"]
 
             event_duration = end - begin
             if begin >= end:
