@@ -1,6 +1,6 @@
 import pytest
 from project.app import create_app
-from project.models import db
+from project.models import db, User
 
 
 @pytest.fixture()
@@ -12,6 +12,9 @@ def app():
 
     with app.app_context():
         db.create_all()
+        admin = User(email="admin", password="admin", role_id=4)
+        db.session.add(admin)
+        db.session.commit()
 
     yield app
 

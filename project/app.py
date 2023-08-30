@@ -51,7 +51,6 @@ def create_app(database_uri="sqlite:///database.db"):
             token = token[7:]
 
         userId = get_id_from_token(token)
-
         try:
             userRoleId = db.session.execute(db.select(User.role_id).filter_by(id=userId)).scalar_one()
         except NoResultFound:
@@ -152,49 +151,51 @@ def create_app(database_uri="sqlite:///database.db"):
             if type(ownerId) == str:
                 abort(401, description=ownerId)
 
-        try:
-            user = db.session.execute(db.select(User).filter_by(id=ownerId)).scalar_one()
-        except NoResultFound:
-            abort(401, description='User with provided token doesnt exist.')
-        else:
-            password = generate_password()
+        password = generate_password()
 
-            new_event = Event(name=name, description=description, link=link, editPassword=hash_password(password),
-                              begin=datetime.strptime(begin, DATE_FORMAT),
-                              end=datetime.strptime(end, DATE_FORMAT), ownerId=ownerId)
+        new_event = Event(name=name, description=description, link=link, editPassword=hash_password(password),
+                          begin=datetime.strptime(begin, DATE_FORMAT),
+                          end=datetime.strptime(end, DATE_FORMAT), ownerId=ownerId)
 
-            event_duration = new_event.end - new_event.begin
-            if new_event.begin >= new_event.end:
-                abort(400, description='Begin date is greater than end date.')
-            if event_duration < timedelta(minutes=15):
-                abort(400, description='Event duration cant be shorter than 15 minutes.')
-            if new_event.begin.date() != new_event.end.date():
-                abort(400, description='Begin and end date have to be the same.')
-            if new_event.begin <= datetime.today():
-                abort(400, description='Invalid begin date.')
+        event_duration = new_event.end - new_event.begin
+        if new_event.begin >= new_event.end:
+            abort(400, description='Begin date is greater than end date.')
+        if event_duration < timedelta(minutes=15):
+            abort(400, description='Event duration cant be shorter than 15 minutes.')
+        if new_event.begin.date() != new_event.end.date():
+            abort(400, description='Begin and end date have to be the same.')
+        if new_event.begin <= datetime.today():
+            abort(400, description='Invalid begin date.')
 
-            db.session.add(new_event)
+        db.session.add(new_event)
 
-            for roomId in roomsId:
-                room = db.session.execute(db.select(Room).filter_by(id=roomId)).scalar_one()
-                events = room.events
-                for event in events:
-                    if ((new_event.begin > event.begin) and (new_event.begin < event.end)) \
-                            or ((new_event.end > event.begin) and (new_event.end < event.end)):
-                        abort(400, description='Event date collides with an already existing event.')
-                room.events.append(new_event)
+        for roomId in roomsId:
+            room = db.session.execute(db.select(Room).filter_by(id=roomId)).scalar_one()
+            events = room.events
+            for event in events:
+                if ((new_event.begin > event.begin) and (new_event.begin < event.end)) \
+                        or ((new_event.end > event.begin) and (new_event.end < event.end)):
+                    abort(400, description='Event date collides with an already existing event.')
+            room.events.append(new_event)
 
-            user.events.append(new_event)
+        if ownerId != "undefined":
+            try:
+                user = db.session.execute(db.select(User).filter_by(id=ownerId)).scalar_one()
+            except NoResultFound:
+                abort(401, description='User with provided token doesnt exist.')
+            else:
+                user.events.append(new_event)
 
-            db.session.commit()
+        db.session.commit()
 
-            return jsonify({"id": new_event.id, "password": password})
+        return jsonify({"id": new_event.id, "password": password})
 
     @app.route("/event/<event_id>", methods=["PATCH"])
     def patch_event(event_id):
         if len(request.args) != 1:
             abort(400, "Invalid number of query parameters")
         password = request.args.get("password", type=str)
+
         try:
             event = db.session.execute(db.select(Event).filter_by(id=event_id)).scalar_one()
         except NoResultFound:
@@ -202,6 +203,8 @@ def create_app(database_uri="sqlite:///database.db"):
         else:
             if password is None or hash_password(password) != event.editPassword:
                 abort(400, "Invalid password")
+            if datetime.today() > event.begin:
+                abort(400, "Cant edit event that already took place.")
 
             event.name = request.json["name"]
             event.description = request.json["description"]
