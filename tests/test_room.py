@@ -1,5 +1,9 @@
+from project.functions import generate_token
+from project.models import db, User
+
+
 def test_room_post(client, app):
-    room_data = {
+    data = {
        "name": "Aaa",
        "description": "Sala konferencyjna 8",
        "capacity": 100,
@@ -11,21 +15,12 @@ def test_room_post(client, app):
        "whiteboard": False
     }
 
-    user_data = {
-        "email": "test@test.com",
-        "firstName": "test",
-        "lastName": "test",
-        "password": "test123"
-    }
-
-    response = client.post("/register", json=user_data)
-
-    token = response.json["token"]
-    headers = {"Authorization": f"Bearer {token}"}
-
     with app.app_context():
-        response = client.post("/room", headers=headers, json=room_data)
-    assert response.status_code == 401
+        admin = db.session.execute(db.select(User).filter_by(email="admin")).scalar_one()
 
-
-
+    token = generate_token(admin.id)
+    headers = {"Authorization": f"Bearer {token}"}
+    print(admin.id)
+    with app.app_context():
+        response = client.post("/room", headers=headers, json=data)
+    assert response.status_code == 200

@@ -33,9 +33,9 @@ def test_registration(email, firstName, lastName, password, valid, client, app):
 
     with app.app_context():
         if valid:
-            assert User.query.count() == 1 and response.status_code == 200
+            assert User.query.count() == 2 and response.status_code == 200
         else:
-            assert User.query.count() == 0 and response.status_code != 200
+            assert User.query.count() == 1 and response.status_code != 200
 
 
 @pytest.mark.parametrize(
