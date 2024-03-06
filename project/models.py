@@ -23,14 +23,39 @@ user_event_m2m = db.Table(
 
 
 class Role(db.Model):
-    # Role (id, name)
+    """
+    Represents a role in the system.
+
+    Attributes:
+        id (int): The unique identifier for the role.
+        name (str): The name of the role.
+    """
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     name = sa.Column(sa.String, nullable=False)
 
 
 class Room(db.Model):
-    # Room (id, name, description, capacity, hasProjector, hasConditioning,
-    # hasTV, hasEthernet, hasWhiteboard, hasWiFi)
+    """
+    Represents a room in the reservations system.
+
+    Attributes:
+        id (int): The unique identifier for the room.
+        name (str): The name of the room.
+        description (str): The description of the room.
+        capacity (int): The maximum capacity of the room.
+        projector (bool): Indicates if the room has a projector.
+        conditioning (bool): Indicates if the room has air conditioning.
+        tv (bool): Indicates if the room has a TV.
+        ethernet (bool): Indicates if the room has Ethernet connection.
+        wifi (bool): Indicates if the room has WiFi.
+        whiteboard (bool): Indicates if the room has a whiteboard.
+        events (list): The list of events associated with the room.
+
+    Methods:
+        obj_to_dict(): Converts the Room object to a dictionary.
+        obj_to_dict_short(): Converts the Room object to a dictionary with limited attributes.
+    """
+
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     name = sa.Column(sa.String, nullable=False)
     description = sa.Column(sa.String)
@@ -44,6 +69,12 @@ class Room(db.Model):
     events = relationship("Event", secondary="room_event", backref='rooms')
 
     def obj_to_dict(self):
+        """
+        Converts the Room object to a dictionary.
+
+        Returns:
+            dict: A dictionary representation of the Room object.
+        """
         return {
             "id": self.id,
             "name": self.name,
@@ -58,6 +89,12 @@ class Room(db.Model):
         }
 
     def obj_to_dict_short(self):
+        """
+        Converts the Room object to a dictionary with limited attributes.
+
+        Returns:
+            dict: A dictionary representation of the Room object with limited attributes.
+        """
         return {
             "id": self.id,
             "name": self.name,
@@ -67,16 +104,40 @@ class Room(db.Model):
 
 
 class User(db.Model):
-    # User (id, email, firstName, lastName, hashedPassword, role_id)
+    """
+    Represents a user in the system.
+
+    Attributes:
+        id (int): The unique identifier for the user.
+        email (str): The email address of the user.
+        firstName (str): The first name of the user.
+        lastName (str): The last name of the user.
+        password (str): The hashed password of the user.
+        role_id (int): The role ID of the user.
+        events (list): The list of events associated with the user.
+
+    Methods:
+        obj_to_dict(): Converts the User object to a dictionary.
+        is_authenticated(): Checks if the user is authenticated.
+        is_active(): Checks if the user is active.
+        is_anonymous(): Checks if the user is anonymous.
+        get_id(): Gets the ID of the user.
+    """
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     email = sa.Column(sa.String, nullable=False, unique=True)
     firstName = sa.Column(sa.String)
     lastName = sa.Column(sa.String)
-    password = sa.Column(sa.String, nullable=False)  # hashed JIC
+    password = sa.Column(sa.String, nullable=False)
     role_id = sa.Column(sa.ForeignKey(Role.id), default="1")
     events = relationship("Event", secondary="user_event", backref='users')
 
     def obj_to_dict(self):
+        """
+        Converts the User object to a dictionary.
+
+        Returns:
+            dict: A dictionary representation of the User object.
+        """
         return {
             "email": self.email,
             "firstName": self.firstName,
@@ -84,20 +145,59 @@ class User(db.Model):
         }
 
     def is_authenticated(self):
+        """
+        Checks if the user is authenticated.
+
+        Returns:
+            bool: True if the user is authenticated, False otherwise.
+        """
         return True
 
     def is_active(self):
+        """
+        Checks if the user is active.
+
+        Returns:
+            bool: True if the user is active, False otherwise.
+        """
         return True
 
     def is_anonymous(self):
+        """
+        Checks if the user is anonymous.
+
+        Returns:
+            bool: False since the user is not anonymous.
+        """
         return False
 
     def get_id(self):
+        """
+        Gets the ID of the user.
+
+        Returns:
+            str: The ID of the user.
+        """
         return str(self.id)
 
 
 class Event(db.Model):
-    # Event (id, name, description, link, editPassword, start, end, owner_id)
+    """
+    Represents an event in the system.
+
+    Attributes:
+        id (int): The unique identifier for the event.
+        name (str): The name of the event.
+        description (str): The description of the event.
+        link (str): The link associated with the event.
+        editPassword (str): The password for editing the event.
+        begin (datetime): The start time of the event.
+        end (datetime): The end time of the event.
+        ownerId (int): The ID of the owner of the event.
+
+    Methods:
+        obj_to_dict(): Converts the Event object to a dictionary.
+    """
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     name = sa.Column(sa.String, nullable=False)
     description = sa.Column(sa.String)
@@ -108,6 +208,12 @@ class Event(db.Model):
     ownerId = sa.Column(sa.Integer, sa.ForeignKey(User.id))
 
     def obj_to_dict(self):
+        """
+        Converts the Event object to a dictionary.
+
+        Returns:
+            dict: A dictionary representation of the Event object.
+        """
         return {
             "id": self.id,
             "name": self.name,

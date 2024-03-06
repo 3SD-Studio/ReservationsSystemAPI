@@ -9,6 +9,15 @@ DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 
 def create_app(database_uri="sqlite:///database.db"):
+    """
+    Creates and configures the Flask application.
+
+    Args:
+        database_uri (str): The URI of the database. Defaults to "sqlite:///database.db".
+
+    Returns:
+        Flask: The configured Flask application.
+    """
     app = Flask(__name__)
     app.secret_key = 'some key'
     app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
@@ -26,15 +35,36 @@ def create_app(database_uri="sqlite:///database.db"):
 
     @app.route("/", methods=['GET'])
     def index():
+        """
+        Returns a JSON response with the message "Hello World!".
+        """
         return jsonify("Hello World!")
 
     @app.route("/rooms", methods=['GET'])
     def get_rooms():
+        """
+        Retrieve all rooms from the database and return them as JSON.
+
+        Returns:
+            A JSON response containing a list of room objects.
+        """
         rooms = db.session.execute(db.select(Room)).all()
         return jsonify([room[0].obj_to_dict_short() for room in rooms])
 
     @app.route("/room/<room_id>", methods=['GET'])
     def get_room(room_id):
+        """
+        Retrieve information about a specific room.
+
+        Args:
+            room_id (int): The ID of the room to retrieve.
+
+        Returns:
+            dict: A dictionary containing the room information.
+
+        Raises:
+            400: If the room ID is invalid.
+        """
         try:
             room = db.session.execute(db.select(Room).filter_by(id=room_id)).scalar_one()
         except NoResultFound:
@@ -44,6 +74,26 @@ def create_app(database_uri="sqlite:///database.db"):
 
     @app.route("/room", methods=["POST"])
     def post_room():
+        """
+        Add a new room to the system.
+
+        This endpoint requires a valid token in the Authorization header with the format 'Bearer <token>'.
+        Only users with the role of Editor or Admin can add a room.
+
+        Request Body:
+        - name: The name of the room (string)
+        - description: The description of the room (string)
+        - capacity: The capacity of the room (integer)
+        - projector: Whether the room has a projector (boolean)
+        - conditioning: Whether the room has air conditioning (boolean)
+        - tv: Whether the room has a TV (boolean)
+        - ethernet: Whether the room has Ethernet connection (boolean)
+        - whiteboard: Whether the room has a whiteboard (boolean)
+        - wifi: Whether the room has WiFi (boolean)
+
+        Returns:
+            A JSON response indicating the success of the operation.
+        """
         token = request.headers.get('Authorization')
         if token is None or token[:7] != 'Bearer ':
             abort(401, description='Invalid token.')
@@ -80,11 +130,29 @@ def create_app(database_uri="sqlite:///database.db"):
 
     @app.route("/events", methods=['GET'])
     def get_events():
+        """
+        Retrieve all events from the database.
+
+        Returns:
+            A JSON response containing a list of event objects.
+        """
         events = db.session.execute(db.select(Event)).all()
         return jsonify([event[0].obj_to_dict() for event in events])
 
     @app.route("/event/<event_id>", methods=['GET'])
     def get_event(event_id):
+        """
+        Retrieve an event by its ID.
+
+        Args:
+            event_id (int): The ID of the event to retrieve.
+
+        Returns:
+            dict: A dictionary representing the event object.
+
+        Raises:
+            400: If the event ID is invalid.
+        """
         try:
             event = db.session.execute(db.select(Event).filter_by(id=event_id)).scalar_one()
         except NoResultFound:
@@ -94,6 +162,18 @@ def create_app(database_uri="sqlite:///database.db"):
 
     @app.route("/room/<room_id>/events", methods=['GET'])
     def get_events_for_room(room_id):
+        """
+        Retrieves events for a specific room based on the given parameters.
+
+        Args:
+            room_id (int): The ID of the room.
+
+        Returns:
+            A JSON response containing the events for the room.
+
+        Raises:
+            400: If there are invalid values for the parameters or if the room ID is invalid.
+        """
         if len(request.args) <= 1:
             limit = request.args.get("limit", default=20, type=int)
             if 0 > limit or limit > 20:
@@ -133,6 +213,20 @@ def create_app(database_uri="sqlite:///database.db"):
 
     @app.route("/event", methods=["POST"])
     def post_event():
+        """
+        Create a new event.
+
+        This function handles the POST request to create a new event in the reservations system.
+        It retrieves the necessary data from the request JSON payload, validates the data,
+        generates an edit password for the event, and saves the event to the database.
+
+        Returns:
+            A JSON response containing the ID of the newly created event and the edit password.
+
+        Raises:
+            400: If the provided data is invalid or the event date collides with an existing event.
+            401: If the user is not authenticated or the provided token is invalid.
+        """
         name = request.json["name"]
         description = request.json["description"]
         link = request.json["link"]
@@ -192,6 +286,24 @@ def create_app(database_uri="sqlite:///database.db"):
 
     @app.route("/event/<event_id>", methods=["PATCH"])
     def patch_event(event_id):
+        """
+        Update an event with the given event_id.
+
+        Args:
+            event_id (str): The ID of the event to be updated.
+
+        Returns:
+            dict: A JSON response containing the updated event ID and password.
+
+        Raises:
+            400: If the number of query parameters is invalid.
+            400: If the eventId parameter is invalid.
+            400: If the password is invalid.
+            400: If the begin date is greater than the end date.
+            400: If the event duration is shorter than 15 minutes.
+            400: If the begin and end date are not the same.
+            400: If the begin date is invalid.
+        """
         if len(request.args) != 1:
             abort(400, "Invalid number of query parameters")
         password = request.args.get("password", type=str)
@@ -228,6 +340,21 @@ def create_app(database_uri="sqlite:///database.db"):
 
     @app.route("/event/<event_id>/user", methods=["POST"])
     def add_participant_to_event(event_id):
+        """
+        Add a participant to an event.
+
+        Args:
+            event_id (str): The ID of the event.
+
+        Returns:
+            str: A JSON response indicating that the participant has been added.
+
+        Raises:
+            401: If the token is invalid.
+            400: If the event ID is invalid, the user is not the owner of the event,
+                 the email is not provided, or the user with the provided email already exists.
+
+        """
         token = request.headers.get('Authorization')
         if token is None or token[:7] != 'Bearer ':
             abort(401, description='Invalid token.')
@@ -265,6 +392,18 @@ def create_app(database_uri="sqlite:///database.db"):
 
     @app.route('/register', methods=['POST'])
     def register():
+        """
+        Register a new user.
+
+        This endpoint allows users to register by providing their email, first name, last name, and password.
+        The provided information is validated, and if valid, a new user is created in the database.
+
+        Returns:
+            A JSON response containing a token for the registered user.
+
+        Raises:
+            400 Bad Request: If any of the required variables are missing or invalid.
+        """
         email = request.json["email"]
         firstName = request.json["firstName"]
         lastName = request.json["lastName"]
@@ -294,6 +433,15 @@ def create_app(database_uri="sqlite:///database.db"):
 
     @app.route('/login', methods=['POST'])
     def login():
+        """
+        Logs in a user by verifying their email and password.
+
+        Returns:
+            A JSON response containing a token if the login is successful.
+
+        Raises:
+            400: If the email and password combination is invalid.
+        """
         email = request.json["email"]
         password = request.json["password"]
 
@@ -306,6 +454,15 @@ def create_app(database_uri="sqlite:///database.db"):
             return jsonify({"token": token})
 
     def get_logged_user():
+        """
+        Retrieves the logged-in user based on the provided token in the request headers.
+
+        Returns:
+            The logged-in user object.
+
+        Raises:
+            401: If the token is invalid or the user does not exist.
+        """
         token = request.headers.get('Authorization')
         if token is None or token[:7] != 'Bearer ':
             abort(401, description='Invalid token.')
@@ -322,12 +479,23 @@ def create_app(database_uri="sqlite:///database.db"):
 
     @app.route('/user', methods=['GET'])
     def get_logged_user_data():
+        """
+        Retrieves the data of the logged-in user.
+
+        Returns:
+            A JSON response containing the user's data.
+        """
         user = get_logged_user()
         return jsonify(user.obj_to_dict())
 
     @app.route('/user/events', methods=['GET'])
     def get_events_for_user():
+        """
+        Retrieves events for a specific user.
 
+        Returns:
+            A JSON response containing a list of events for the user, sorted by the 'begin' attribute.
+        """
         token = request.headers.get('Authorization')
         if token is None or token[:7] != 'Bearer ':
             abort(401, description='Invalid token.')
@@ -348,6 +516,20 @@ def create_app(database_uri="sqlite:///database.db"):
 
     @app.route('/user/<user_id>', methods=['PATCH'])
     def change_user_role(user_id):
+        """
+        Change the role of a user.
+
+        Args:
+            user_id (int): The ID of the user to change the role for.
+
+        Returns:
+            str: A JSON response indicating that the role has been changed.
+
+        Raises:
+            401: If the logged-in user is not an administrator or if the user ID is invalid.
+            400: If the provided role ID is invalid.
+
+        """
         logged_user = get_logged_user()
         if logged_user.role_id != 4:
             abort(401, description="Only administrator can change user role.")
