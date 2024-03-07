@@ -81,6 +81,29 @@ def get_id_from_token(token):
         return 'Invalid token. Please log in again.'
 
 
+def get_values_from_token(token):
+    """
+    Retrieves the user ID from the given JWT token.
+
+    Args:
+        token (str): The JWT token to decode.
+
+    Returns:
+        str, datetime, datetime: user_id, expiration, issued
+
+    Raises:
+        str: If the token has expired, returns 'Signature expired. Please log in again.'
+        str: If the token is invalid, returns 'Invalid token. Please log in again.'
+    """
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return payload['sub'], payload['exp'], payload['iat']
+    except jwt.ExpiredSignatureError:
+        return 'Signature expired. Please log in again.', datetime.now(), datetime.now()
+    except jwt.InvalidTokenError:
+        return 'Invalid token. Please log in again.', datetime.now(), datetime.now()
+
+
 def generate_password():
     """
     Generates a random password consisting of letters (both uppercase and lowercase) and digits.

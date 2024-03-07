@@ -224,3 +224,19 @@ class Event(db.Model):
             "end": self.end,
             "ownerId": self.ownerId,
         }
+
+
+
+
+class TokenBlacklist(db.Model):
+    """
+    Represents an event in the system.
+
+    Attributes:
+        id (int): 
+        token_value (string):
+        expiration_date (datetime): 
+    """
+    id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    tokenValue = sa.Column(sa.String, nullable=False)
+    expirationDate = sa.Column(sa.DateTime, nullable=False)

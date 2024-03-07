@@ -2,7 +2,7 @@ from flask_cors import CORS
 from flask import Flask, jsonify, request, abort
 from flask_login import LoginManager
 from sqlalchemy.orm.exc import NoResultFound
-from project.models import Room, Event, User, db
+from project.models import Room, Event, User, TokenBlacklist, db
 from project.functions import *
 
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
@@ -456,6 +456,22 @@ def create_app(database_uri="sqlite:///database.db"):
             token = generate_token(user.id)
             return jsonify({"token": token})
 
+    @app.route("/logout", methods=["GET"])
+    def logout():
+        token = request.headers.get('Authorization')
+        if token is None or token[:7] != 'Bearer ':
+            abort(401, description='Invalid token.')
+        else:
+            token = token[7:]
+
+        
+        user, exp_date, iat_date = get_values_from_token(token)
+        token_blacklist_element = TokenBlacklist(tokenValue=token, expirationDate=datetime.fromtimestamp(exp_date))
+        db.session.add(token_blacklist_element)
+        db.session.commit()
+
+        return jsonify({"message": "success"})
+        
     def get_logged_user():
         """
         Retrieves the logged-in user based on the provided token in the request headers.
@@ -559,10 +575,11 @@ if __name__ == "__main__":
 
     with app.app_context():
         db.create_all()
-        admin = db.session.execute(db.select(User).filter_by(email="admin")).scalar_one()
-        if admin is None:
+        try:
+            admin = db.session.execute(db.select(User).filter_by(email="admin")).scalar_one()
+        except NoResultFound:
             admin = User(email="admin", password="admin", role_id=4)
             db.session.add(admin)
-            db.session.commit()
+            db.session.commit()            
 
     app.run()

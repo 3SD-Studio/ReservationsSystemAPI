@@ -1,6 +1,6 @@
 /flask 
 /__pycache__
 /instance
+/project/instance
 /.idea
-/run.bat
 /project/__pycache__
