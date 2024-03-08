@@ -488,6 +488,9 @@ def create_app(database_uri="sqlite:///database.db"):
         else:
             token = token[7:]
 
+        if db.session.query((db.exists().where(TokenBlacklist.tokenValue == token))).scalar():
+            abort(401, description='Invalid token.')
+
         userId = get_id_from_token(token)
         try:
             user = db.session.execute(db.select(User).filter_by(id=userId)).scalar_one()
