@@ -468,6 +468,7 @@ def create_app(database_uri="sqlite:///database.db"):
         user, exp_date, iat_date = get_values_from_token(token)
         token_blacklist_element = TokenBlacklist(tokenValue=token, expirationDate=datetime.fromtimestamp(exp_date))
         db.session.add(token_blacklist_element)
+        db.session.execute(db.delete(TokenBlacklist).where(TokenBlacklist.expirationDate < datetime.now()))
         db.session.commit()
 
         return jsonify({"message": "success"})
